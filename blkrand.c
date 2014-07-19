@@ -10,6 +10,7 @@
 
 #include "blkrand.h"
 #include "fastrand.h"
+#include "sha1.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -64,11 +65,12 @@ blkrand_init()
 #define ALIGNMENT_MASK  (BYTES_PER_LOOP-1)
 
 int
-blkrand_fill(char *outbuf, size_t nbytes)
+blkrand_fill(char *outbuf, size_t nbytes, unsigned char *hashout)
 {
 	/* FastRand always generates 4 32bit numbers at a time, so
 	   first make sure our base is 16 byte aligned */
 	char *end;         /* end of copying */
+	blk_SHA_CTX sha_ctx;
 
 	end = outbuf + nbytes;
 
@@ -78,11 +80,21 @@ blkrand_fill(char *outbuf, size_t nbytes)
 	if ((unsigned long)end & ALIGNMENT_MASK)
 		return -1;
 
+	if (hashout)
+		blk_SHA1_Init(&sha_ctx);
+
 	while (outbuf != end) {
 		FastRand_SSE(&f);
 		memcpy(outbuf, &f.res, BYTES_PER_LOOP);
+
+		if (hashout)
+			blk_SHA1_Update(&sha_ctx, outbuf, BYTES_PER_LOOP);
+
 		outbuf += BYTES_PER_LOOP;
 	}
+
+	if (hashout)
+		blk_SHA1_Final(hashout, &sha_ctx);
 
 	return 0;
 }

@@ -20,6 +20,7 @@
 
 static int force_overwrite=0;
 static int verbose=0;
+static int compute_sha1=0;
 
 static void
 usage(char *argv0)
@@ -30,6 +31,7 @@ usage(char *argv0)
 	fprintf(stderr,"  -h     : this help\n");
 	fprintf(stderr,"  -v     : be verbose\n");
 	fprintf(stderr,"  -f     : force overwrite\n");
+	fprintf(stderr,"  -s     : compute and print sha1\n");
 }
 
 int
@@ -40,8 +42,9 @@ main(int argc, char **argv)
 	size_t sz;
 	void *fmap;
 	int bitshift = 0;
+	unsigned char *hash;
 
-	while (-1 != (i=getopt(argc, argv, "hvf"))) {
+	while (-1 != (i=getopt(argc, argv, "hvfs"))) {
 		switch (i) {
 		case 'h':
 			usage(argv[0]);
@@ -52,6 +55,9 @@ main(int argc, char **argv)
 		case 'f':
 			force_overwrite++;
 			break;
+		case 's':
+			compute_sha1++;
+			break;
 		}
 	}
 
@@ -59,6 +65,11 @@ main(int argc, char **argv)
 		usage(argv[0]);
 		exit(1);
 	}
+
+	if (compute_sha1)
+		hash = calloc(1, 20); /* 20 bytes, as per sha1.h */
+	else
+		hash = NULL;
 
 	/* parse size */
 	i = strlen(argv[optind]); /* prefix kMG */
@@ -119,7 +130,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	if (-1 == blkrand_fill(fmap, sz)) {
+	if (-1 == blkrand_fill(fmap, sz, hash)) {
 		fprintf(stderr,"blkrand() error!\n");
 		exit(1);
 	}
@@ -127,6 +138,14 @@ main(int argc, char **argv)
 	if (-1 == munmap(fmap, sz)) {
 		perror(argv[optind+1]);
 		exit(1);		
+	}
+
+	if (hash) {
+		for (i=0; i<20; i++)
+			printf("%02x",hash[i]);
+		printf("\n");
+		free(hash);
+		hash=NULL;
 	}
 
 	return 0;

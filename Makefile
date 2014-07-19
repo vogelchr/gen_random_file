@@ -1,6 +1,6 @@
 CFLAGS=-Wall -Wextra -Os -ggdb
 CPPFLAGS=
-OBJS=gen_random_file.o blkrand.o
+OBJS=gen_random_file.o blkrand.o sha1.o
 
 all : gen_random_file
 

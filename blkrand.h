@@ -29,6 +29,6 @@ extern int
 blkrand_init();
 
 extern int
-blkrand_fill(char *buf, size_t nbytes);
+blkrand_fill(char *buf, size_t nbytes, unsigned char *hash);
 
 #endif
