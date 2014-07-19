@@ -18,7 +18,7 @@
  *  modification, are permitted without restrictions.
  */
 
-
+static int force_overwrite=0;
 static int verbose=0;
 
 static void
@@ -29,6 +29,7 @@ usage(char *argv0)
 	fprintf(stderr,"Options:\n");
 	fprintf(stderr,"  -h     : this help\n");
 	fprintf(stderr,"  -v     : be verbose\n");
+	fprintf(stderr,"  -f     : force overwrite\n");
 }
 
 int
@@ -40,13 +41,16 @@ main(int argc, char **argv)
 	void *fmap;
 	int bitshift = 0;
 
-	while (-1 != (i=getopt(argc, argv, "hv"))) {
+	while (-1 != (i=getopt(argc, argv, "hvf"))) {
 		switch (i) {
 		case 'h':
 			usage(argv[0]);
 			exit(1);
 		case 'v':
 			verbose++;
+			break;
+		case 'f':
+			force_overwrite++;
 			break;
 		}
 	}
@@ -86,7 +90,12 @@ main(int argc, char **argv)
 	blkrand_init();
 
 	/* open and mmap file */
-	if (-1 == (fd=open(argv[optind+1], O_RDWR|O_EXCL|O_CREAT,0644))) {
+
+	i = O_RDWR|O_EXCL|O_CREAT;
+	if (force_overwrite)	/* -f flag allows overwriting of existing */
+		i &= ~ O_EXCL;	/*    files */
+
+	if (-1 == (fd=open(argv[optind+1], i,0644))) {
 		perror(argv[optind+1]);
 		close(fd);
 		exit(1);
