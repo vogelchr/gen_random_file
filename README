@@ -1,0 +1,11 @@
+gen_random_file - Generate a file with random content.
+
+For testing storage systems, I need a quick way to generate files
+with random content in it. Linux' /dev/urandom is slow, so I wrote
+this small wrapper around fastrand.h from Ivan Dimkovic
+(included as fastrand.h).
+
+NOTE: This program will most likely only work on a 64bit x86-64 PC
+capable of using the SSE4 extensions.
+
+Christian Vogel <vogelchr@vogel.cx>, 2014
