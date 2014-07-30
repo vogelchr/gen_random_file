@@ -63,6 +63,7 @@ blkrand_init()
 #define BYTES_PER_LOOP	sizeof(f.res)
 /* assume that BYTES_PER_LOOP is a simple power of two! */
 #define ALIGNMENT_MASK  (BYTES_PER_LOOP-1)
+#define ALIGN_SHA1	0xffff		/* 64k per sha1-loop */
 
 int
 blkrand_fill(char *outbuf, size_t nbytes, unsigned char *hashout)
@@ -70,6 +71,7 @@ blkrand_fill(char *outbuf, size_t nbytes, unsigned char *hashout)
 	/* FastRand always generates 4 32bit numbers at a time, so
 	   first make sure our base is 16 byte aligned */
 	char *end;         /* end of copying */
+	char *last_sha1;
 	blk_SHA_CTX sha_ctx;
 
 	end = outbuf + nbytes;
@@ -83,15 +85,24 @@ blkrand_fill(char *outbuf, size_t nbytes, unsigned char *hashout)
 	if (hashout)
 		blk_SHA1_Init(&sha_ctx);
 
+	last_sha1 = outbuf;
 	while (outbuf != end) {
 		FastRand_SSE(&f);
 		memcpy(outbuf, &f.res, BYTES_PER_LOOP);
 
-		if (hashout)
-			blk_SHA1_Update(&sha_ctx, outbuf, BYTES_PER_LOOP);
-
 		outbuf += BYTES_PER_LOOP;
+
+		if (hashout) {
+			if (((unsigned long)outbuf & ALIGN_SHA1) == 0) {
+				blk_SHA1_Update(&sha_ctx, last_sha1, outbuf-last_sha1);
+				last_sha1 = outbuf;
+			}
+		}
+
 	}
+
+	if (hashout && (last_sha1 != outbuf))
+		blk_SHA1_Update(&sha_ctx, last_sha1, outbuf-last_sha1);
 
 	if (hashout)
 		blk_SHA1_Final(hashout, &sha_ctx);
