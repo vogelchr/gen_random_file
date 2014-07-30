@@ -73,6 +73,7 @@ main(int argc, char **argv)
 
 	/* parse size */
 	i = strlen(argv[optind]); /* prefix kMG */
+	bitshift=0;
 	switch (argv[optind][i-1]) {
 	case 'k':
 		bitshift=10;
@@ -83,6 +84,8 @@ main(int argc, char **argv)
 	case 'G':
 		bitshift=30;
 		break;
+	case '0' ... '9':
+		break;
 	default:
 		fprintf(stderr,"Cannot parse \"%s\" as size.\n",argv[optind]);
 		fprintf(stderr,"Please specify a size suffix of k,M or G only.\n");
@@ -90,7 +93,8 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	argv[optind][i]='\0';
+	if (bitshift)
+		argv[optind][i]='\0';
 	sz = atoi(argv[optind]);
 	sz <<= bitshift;
 
